@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build and Release APK
 
 on:
   workflow_dispatch:
@@ -6,6 +6,9 @@ on:
     branches:
       - main
       - master
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -26,14 +29,22 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Check Gradle version
-        run: gradle --version
-
       - name: Build APK
         run: gradle assembleDebug --no-daemon
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - name: Rename APK
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk zip-uploader.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: zip-uploader-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          tag_name: v1.0.${{ github.run_number }}
+          name: zip-uploader v1.0.${{ github.run_number }}
+          body: |
+            📱 zip-uploader APK
+
+            Download the APK below and install it on Android.
+          files: zip-uploader.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
